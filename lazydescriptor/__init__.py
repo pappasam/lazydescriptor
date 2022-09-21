@@ -16,7 +16,7 @@ class Lazy(Generic[T]):
 
     def __init__(self) -> None:
         self.value = _SENTINEL
-        self.total_calls = 0
+        self.called = False
 
     def __set_name__(self, owner, name):
         if self.value is not _SENTINEL:
@@ -33,14 +33,15 @@ class Lazy(Generic[T]):
     def __get__(self, obj, objtype=None) -> T:
         if obj is None:
             return self.value  # type: ignore
-        if self.total_calls == 0:
+        if not self.called:
             self.value = self.value()  # type: ignore
-            self.total_calls += 1
+            self.called = True
         return self.value  # type: ignore
 
     def __set__(self, obj, value: "Lazy[T]") -> None:
         if not callable(value) or len(inspect.signature(value).parameters) > 0:
             raise TypeError("Must be a callable with 0 parameters")
+        self.called = False
         self.value = value
 
 
