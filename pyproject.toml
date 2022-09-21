@@ -1,0 +1,31 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool]
+
+[tool.black]
+line-length = 79
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.poetry]
+name = "lazydescriptor"
+version = "0.1.0"
+description = ""
+authors = ["Sam Roeca <samuel.roeca@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^0.971"
+pylint = "^2.15.3"
+black = "^22.8.0"
+docformatter = "^1.5.0"
+isort = "^5.10.1"
+toml-sort = "^0.20.1"
+
