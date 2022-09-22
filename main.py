@@ -15,6 +15,8 @@ class Test:
     my_list: Lazy[list[str]] = LazyDesc()
 
 
+# Note: you can use either the regular type or the lazy function wrapped
+# equivalent. Commented out section also works!
 test = Test(
     my_normal=13,
     my_int=lazy(lambda: 12),
