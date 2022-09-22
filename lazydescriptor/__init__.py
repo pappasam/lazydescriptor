@@ -14,20 +14,24 @@ class LazyDesc(Generic[T]):
     Contains a few more things for mypy
     """
 
+    @overload
+    def __init__(self, *, default: "Lazy[T]") -> None:
+        ...
+
+    @overload
     def __init__(self) -> None:
-        self._value = _SENTINEL
-        self._called = False
+        ...
+
+    def __init__(self, *, default=_SENTINEL) -> None:
+        self._lazy = isinstance(default, LazyDesc)
+        self._value = default
 
     def set_callable_value(self, value: Callable[[], T]) -> None:
         """Function to set the value manually to a callable."""
         if not callable(value) or len(inspect.signature(value).parameters) > 0:
             raise TypeError("Must be a callable with 0 parameters")
-        self._called = False
+        self._lazy = True
         self._value = value
-
-    def __set_name__(self, owner, name):
-        if self._value is not _SENTINEL:
-            raise TypeError("Do not set value when using as a descriptor")
 
     def __call__(self) -> T:
         return self._value()  # type: ignore
@@ -35,13 +39,15 @@ class LazyDesc(Generic[T]):
     def __get__(self, obj, objtype=None) -> T:
         if obj is None:
             return self._value  # type: ignore
-        if not self._called:
+        if self._value is _SENTINEL:
+            raise ValueError("Value should not be the sentinel")
+        if self._lazy:
             self._value = self._value()  # type: ignore
-            self._called = True
+            self._lazy = False
         return self._value  # type: ignore
 
     def __set__(self, obj, value: "Lazy[T]") -> None:
-        self._called = not isinstance(value, LazyDesc)
+        self._lazy = isinstance(value, LazyDesc)
         self._value = value
 
 

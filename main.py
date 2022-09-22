@@ -13,6 +13,7 @@ class Test:
     my_int: Lazy[int] = LazyDesc()
     my_str: Lazy[str] = LazyDesc()
     my_list: Lazy[list[str]] = LazyDesc()
+    value_with_default: Lazy[int | None] = LazyDesc(default=None)
 
 
 # Note: you can use either the regular type or the lazy function wrapped
