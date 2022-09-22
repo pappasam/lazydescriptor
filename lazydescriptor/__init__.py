@@ -18,7 +18,7 @@ class LazyDesc(Generic[T]):
         self._value = _SENTINEL
         self._called = False
 
-    def set_callable_value_manually(self, value: Callable[[], T]) -> None:
+    def set_callable_value(self, value: Callable[[], T]) -> None:
         """Function to set the value manually to a callable."""
         if not callable(value) or len(inspect.signature(value).parameters) > 0:
             raise TypeError("Must be a callable with 0 parameters")
@@ -51,5 +51,5 @@ Lazy = Union[T, LazyDesc[T]]
 def lazy(value: Callable[[], T]) -> LazyDesc[T]:
     """Get a lazy thing, setting a value."""
     instance: LazyDesc[T] = LazyDesc()
-    instance.set_callable_value_manually(value)
+    instance.set_callable_value(value)
     return instance
