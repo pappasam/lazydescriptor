@@ -2,7 +2,9 @@
 
 from dataclasses import dataclass
 
-from lazydescriptor import Lazy, LazyField, lazy
+from lazyfield import Lazy, LazyField, lazy
+
+# pylint: disable=invalid-name
 
 
 @dataclass
@@ -13,7 +15,7 @@ class Test:
     my_int: Lazy[int] = LazyField()
     my_str: Lazy[str] = LazyField()
     my_list: Lazy[list[str]] = LazyField()
-    value_with_default: Lazy[int] = LazyDescOpt()
+    value_with_default: Lazy[int | None] = LazyField(None)
 
 
 # Note: you can use either the regular type or the lazy function wrapped
@@ -28,6 +30,7 @@ test = Test(
 
 
 def hello(x: int) -> int:
+    """Hello function."""
     print("I ran!", x)
     return x
 
