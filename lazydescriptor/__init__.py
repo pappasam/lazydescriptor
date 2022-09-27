@@ -1,7 +1,7 @@
 import inspect
-from typing import Callable, Generic, TypeVar, Union, overload
+from typing import Callable, Generic, Optional, TypeVar, Union, overload
 
-__all__ = ["Lazy", "LazyDesc", "lazy"]
+__all__ = ["Lazy", "LazyOpt", "LazyDesc", "LazyDescOpt", "lazy"]
 
 _SENTINEL = object()
 
@@ -51,7 +51,13 @@ class LazyDesc(Generic[T]):
         self._value = value
 
 
+class LazyDescOpt(LazyDesc[Optional[T]]):
+    def __init__(self) -> None:
+        super().__init__(default=None)
+
+
 Lazy = Union[T, LazyDesc[T]]
+LazyOpt = Union[T, LazyDesc[Optional[T]]]
 
 
 def lazy(value: Callable[[], T]) -> LazyDesc[T]:
