@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from lazyfield import Lazy, LazyField, lazy
+from lazyfield import Lazy, lazyfield, lazy
 
 # pylint: disable=invalid-name
 
@@ -13,10 +13,10 @@ class Test:
     """Testing class for lazy values."""
 
     my_normal: int
-    my_int: Lazy[int] = LazyField()
-    my_str: Lazy[str] = LazyField()
-    my_list: Lazy[list[str]] = LazyField()
-    value_with_default: Lazy[Optional[int]] = LazyField(None)
+    my_int: Lazy[int] = lazyfield()
+    my_str: Lazy[str] = lazyfield()
+    my_list: Lazy[list[str]] = lazyfield()
+    value_with_default: Lazy[Optional[int]] = lazyfield(None)
 
 
 # Note: you can use either the regular type or the lazy function wrapped

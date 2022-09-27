@@ -1,11 +1,12 @@
 import inspect
 from typing import Callable, Generic, Optional, TypeVar, Union, overload
 
-__all__ = ["Lazy", "LazyField", "lazy"]
+__all__ = ["Lazy", "lazyfield", "lazy"]
 
-_SENTINEL = object()
+_NOTHING = object()
+_NOTHING.__doc__ = "Sentinel value representing the absence of a value"
 
-T = TypeVar("T")
+T = TypeVar("T", covariant=True)
 
 
 class LazyField(Generic[T]):
@@ -22,7 +23,7 @@ class LazyField(Generic[T]):
     def __init__(self) -> None:
         ...
 
-    def __init__(self, default=_SENTINEL) -> None:
+    def __init__(self, default=_NOTHING) -> None:
         self._lazy = isinstance(default, LazyField)
         self._value = default
 
@@ -37,7 +38,7 @@ class LazyField(Generic[T]):
         return self._value()
 
     def __get__(self, obj, objtype=None) -> T:
-        if self._value is _SENTINEL:
+        if self._value is _NOTHING:
             raise AttributeError("LazyField not set")
         if obj is None:
             return self._value
@@ -54,8 +55,23 @@ class LazyField(Generic[T]):
 Lazy = Union[T, LazyField[T]]
 
 
+@overload
+def lazyfield() -> LazyField[T]:
+    ...
+
+
+@overload
+def lazyfield(default: Lazy[T]) -> LazyField[T]:
+    ...
+
+
+def lazyfield(default=_NOTHING):
+    """Create a lazyfield."""
+    return LazyField(default)
+
+
 def lazy(value: Callable[[], T]) -> LazyField[T]:
     """Get a lazy thing, setting a value."""
-    instance: LazyField[T] = LazyField()
+    instance: LazyField[T] = lazyfield()
     instance.set_callable_value(value)
     return instance
