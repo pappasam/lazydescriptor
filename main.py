@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from lazydescriptor import Lazy, LazyDesc, LazyDescOpt, LazyOpt, lazy
+from lazydescriptor import Lazy, LazyField, lazy
 
 
 @dataclass
@@ -10,10 +10,10 @@ class Test:
     """Testing class for lazy values."""
 
     my_normal: int
-    my_int: Lazy[int] = LazyDesc()
-    my_str: Lazy[str] = LazyDesc()
-    my_list: Lazy[list[str]] = LazyDesc()
-    value_with_default: LazyOpt[int] = LazyDescOpt()
+    my_int: Lazy[int] = LazyField()
+    my_str: Lazy[str] = LazyField()
+    my_list: Lazy[list[str]] = LazyField()
+    value_with_default: Lazy[int] = LazyDescOpt()
 
 
 # Note: you can use either the regular type or the lazy function wrapped

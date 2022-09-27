@@ -1,29 +1,29 @@
 import inspect
 from typing import Callable, Generic, Optional, TypeVar, Union, overload
 
-__all__ = ["Lazy", "LazyOpt", "LazyDesc", "LazyDescOpt", "lazy"]
+__all__ = ["Lazy", "LazyField", "lazy"]
 
 _SENTINEL = object()
 
 T = TypeVar("T")
 
 
-class LazyDesc(Generic[T]):
+class LazyField(Generic[T]):
     """A lazy data descriptor.
 
-    Contains a few more things for mypy
+    Useful with normal objects, dataclasses, and anything else really.
     """
 
     @overload
-    def __init__(self, *, default: "Lazy[T]") -> None:
+    def __init__(self, default: "Lazy[T]") -> None:
         ...
 
     @overload
     def __init__(self) -> None:
         ...
 
-    def __init__(self, *, default=_SENTINEL) -> None:
-        self._lazy = isinstance(default, LazyDesc)
+    def __init__(self, default=_SENTINEL) -> None:
+        self._lazy = isinstance(default, LazyField)
         self._value = default
 
     def set_callable_value(self, value: Callable[[], T]) -> None:
@@ -47,21 +47,15 @@ class LazyDesc(Generic[T]):
         return self._value  # type: ignore
 
     def __set__(self, obj, value: "Lazy[T]") -> None:
-        self._lazy = isinstance(value, LazyDesc)
+        self._lazy = isinstance(value, LazyField)
         self._value = value
 
 
-class LazyDescOpt(LazyDesc[Optional[T]]):
-    def __init__(self) -> None:
-        super().__init__(default=None)
+Lazy = Union[T, LazyField[T]]
 
 
-Lazy = Union[T, LazyDesc[T]]
-LazyOpt = Union[T, LazyDesc[Optional[T]]]
-
-
-def lazy(value: Callable[[], T]) -> LazyDesc[T]:
+def lazy(value: Callable[[], T]) -> LazyField[T]:
     """Get a lazy thing, setting a value."""
-    instance: LazyDesc[T] = LazyDesc()
+    instance: LazyField[T] = LazyField()
     instance.set_callable_value(value)
     return instance

@@ -12,7 +12,7 @@ profile = "black"
 line_length = 79
 
 [tool.poetry]
-name = "lazydescriptor"
+name = "lazyfield"
 version = "0.1.0"
 description = ""
 authors = ["Sam Roeca <samuel.roeca@gmail.com>"]
