@@ -34,17 +34,17 @@ class LazyField(Generic[T]):
         self._value = value
 
     def __call__(self) -> T:
-        return self._value()  # type: ignore
+        return self._value()
 
     def __get__(self, obj, objtype=None) -> T:
-        if obj is None:
-            return self._value  # type: ignore
         if self._value is _SENTINEL:
-            raise ValueError("Value should not be the sentinel")
+            raise AttributeError("LazyField not set")
+        if obj is None:
+            return self._value
         if self._lazy:
-            self._value = self._value()  # type: ignore
+            self._value = self._value()
             self._lazy = False
-        return self._value  # type: ignore
+        return self._value
 
     def __set__(self, obj, value: "Lazy[T]") -> None:
         self._lazy = isinstance(value, LazyField)
