@@ -1,6 +1,7 @@
 """The main module."""
 
 from dataclasses import dataclass
+from typing import Optional
 
 from lazyfield import Lazy, LazyField, lazy
 
@@ -15,7 +16,7 @@ class Test:
     my_int: Lazy[int] = LazyField()
     my_str: Lazy[str] = LazyField()
     my_list: Lazy[list[str]] = LazyField()
-    value_with_default: Lazy[int | None] = LazyField(None)
+    value_with_default: Lazy[Optional[int]] = LazyField(None)
 
 
 # Note: you can use either the regular type or the lazy function wrapped
