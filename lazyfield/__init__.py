@@ -4,7 +4,6 @@ from typing import Callable, Generic, Optional, TypeVar, Union, overload
 __all__ = ["Lazy", "lazyfield", "lazy"]
 
 _NOTHING = object()
-_NOTHING.__doc__ = "Sentinel value representing the absence of a value"
 
 T = TypeVar("T", covariant=True)
 
