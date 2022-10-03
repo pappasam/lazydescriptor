@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable, Generic, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
 
 __all__ = ["Lazy", "lazyfield", "lazy"]
 
@@ -25,6 +25,12 @@ class LazyField(Generic[T_co]):
     def __init__(self, default=_NOTHING) -> None:
         self._lazy = isinstance(default, LazyField)
         self._value = default
+        self._private_name = "default"
+        self._private_name_lazy = "default_lazy"
+
+    def __set_name__(self, owner, name):
+        self._private_name = "_" + name
+        self._private_name_lazy = "_" + name + "_lazy"
 
     def set_callable_value(self, value: Callable[[], T_co]) -> None:
         """Function to set the value manually to a callable."""
@@ -33,22 +39,29 @@ class LazyField(Generic[T_co]):
         self._lazy = True
         self._value = value
 
-    def __call__(self) -> T_co:
+    def __call__(self, obj=None) -> T_co:
+        if obj:
+            return self._value(obj)
         return self._value()
 
     def __get__(self, obj, objtype=None) -> T_co:
-        if self._value is _NOTHING:
-            raise AttributeError("LazyField not set")
-        if obj is None:
+        obj_value = getattr(obj, self._private_name, _NOTHING)
+        if obj_value is _NOTHING:
+            try:
+                return self._value(obj)
+            except TypeError as error:
+                raise AttributeError("LazyField not set") from error
+        if obj_value is None:
             return self._value
-        if self._lazy:
-            self._value = self._value()
-            self._lazy = False
-        return self._value
+        obj_lazy = getattr(obj, self._private_name_lazy, False)
+        if obj_lazy:
+            setattr(obj, self._private_name, obj_value())  # type: ignore
+            setattr(obj, self._private_name_lazy, False)
+        return getattr(obj, self._private_name)
 
     def __set__(self, obj, value: "Lazy[T_co]") -> None:
-        self._lazy = isinstance(value, LazyField)
-        self._value = value
+        setattr(obj, self._private_name_lazy, isinstance(value, LazyField))
+        setattr(obj, self._private_name, value)
 
 
 Lazy = Union[T_co, LazyField[T_co]]
@@ -56,6 +69,11 @@ Lazy = Union[T_co, LazyField[T_co]]
 
 @overload
 def lazyfield() -> LazyField[T_co]:
+    ...
+
+
+@overload
+def lazyfield(default: Callable[[Any], T_co]) -> LazyField[T_co]:
     ...
 
 
