@@ -23,7 +23,6 @@ class LazyField(Generic[T_co]):
         ...
 
     def __init__(self, default=_NOTHING) -> None:
-        self._lazy = isinstance(default, LazyField)
         self._value = default
         self._method_decorator = (
             callable(default)
@@ -40,7 +39,6 @@ class LazyField(Generic[T_co]):
         """Function to set the value manually to a callable."""
         if not callable(value) or len(inspect.signature(value).parameters) > 0:
             raise TypeError("Must be a callable with 0 parameters")
-        self._lazy = True
         self._value = value
 
     def __call__(self, obj=None) -> T_co:

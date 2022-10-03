@@ -41,13 +41,17 @@ test = Test(
 )
 
 
-def hello(x: int) -> int:
+def int_func(x: int) -> int:
     """Hello function."""
     print("I ran!", x)
     return x
 
+test.my_int = lazy(lambda: int_func(13))
+print(test.my_int)
+print(test.my_int)
 
-hello(test.my_int)
+
+int_func(test.my_int)
 
 test.my_int = 13
 
