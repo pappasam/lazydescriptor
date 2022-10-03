@@ -25,6 +25,10 @@ class LazyField(Generic[T_co]):
     def __init__(self, default=_NOTHING) -> None:
         self._lazy = isinstance(default, LazyField)
         self._value = default
+        self._method_decorator = (
+            callable(default)
+            and len(inspect.signature(default).parameters) == 1
+        )
         self._private_name = "default"
         self._private_name_lazy = "default_lazy"
 
@@ -47,10 +51,9 @@ class LazyField(Generic[T_co]):
     def __get__(self, obj, objtype=None) -> T_co:
         obj_value = getattr(obj, self._private_name, _NOTHING)
         if obj_value is _NOTHING:
-            try:
+            if self._method_decorator:
                 return self._value(obj)
-            except TypeError as error:
-                raise AttributeError("LazyField not set") from error
+            raise AttributeError("LazyField not set")
         if obj_value is None:
             return self._value
         obj_lazy = getattr(obj, self._private_name_lazy, False)
@@ -62,6 +65,10 @@ class LazyField(Generic[T_co]):
     def __set__(self, obj, value: "Lazy[T_co]") -> None:
         setattr(obj, self._private_name_lazy, isinstance(value, LazyField))
         setattr(obj, self._private_name, value)
+
+    def __delete__(self, obj) -> None:
+        delattr(obj, self._private_name)
+        delattr(obj, self._private_name_lazy)
 
 
 Lazy = Union[T_co, LazyField[T_co]]
