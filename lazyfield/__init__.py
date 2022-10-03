@@ -47,13 +47,13 @@ class LazyField(Generic[T_co]):
         return self._value()
 
     def __get__(self, obj, objtype=None) -> T_co:
+        if obj is None:
+            return self._value
         obj_value = getattr(obj, self._private_name, _NOTHING)
         if obj_value is _NOTHING:
             if self._method_decorator:
                 return self._value(obj)
             raise AttributeError("LazyField not set")
-        if obj_value is None:
-            return self._value
         obj_lazy = getattr(obj, self._private_name_lazy, False)
         if obj_lazy:
             setattr(obj, self._private_name, obj_value())  # type: ignore
