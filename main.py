@@ -8,7 +8,7 @@ from lazyfield import Lazy, lazy, lazyfield
 
 
 def _hello(_test: "Test") -> str:
-    print("I RAN")
+    print("I ran hello")
     return "I RAN METHOD!!! YOOOO, BRUTHA!"
 
 
