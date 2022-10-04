@@ -1,11 +1,15 @@
 """The main module."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 from lazyfield import Lazy, lazy, lazyfield
 
 # pylint: disable=invalid-name
+
+
+def _hello(_test: "Test") -> str:
+    print("I RAN")
+    return "I RAN METHOD!!! YOOOO, BRUTHA!"
 
 
 @dataclass
@@ -16,11 +20,7 @@ class Test:
     my_int: Lazy[int] = lazyfield()
     my_str: Lazy[str] = lazyfield()
     my_list: Lazy[list[str]] = lazyfield()
-
-    @lazyfield
-    def hello(self) -> str:
-        print("I RAN")
-        return "YOOOO, BRUTHA!"
+    hello: Lazy[str] = lazyfield(_hello)
 
 
 # Note: you can use either the regular type or the lazy function wrapped
@@ -40,11 +40,15 @@ test = Test(
     my_list=lazy(lambda: [str(i) for i in range(10)]),
 )
 
+print(test2.my_int)
+# print(test2.my_int)
+
 
 def int_func(x: int) -> int:
     """Hello function."""
     print("I ran!", x)
     return x
+
 
 test.my_int = lazy(lambda: int_func(13))
 print(test.my_int)
@@ -58,9 +62,14 @@ test.my_int = 13
 print(test.hello)
 print(test.hello)
 
-test.hello = "Hello!"
+test.hello = "New Value"
 print(test.hello)
 print(test.hello)
+del test.hello
+print(test.hello)
+print(test.hello)
+print(test)
+
 
 print("test on test 2", test2.hello)
 
