@@ -1,4 +1,5 @@
-import functools
+"""LazyField: lazy evaluation for Python dataclasses and beyond"""
+
 import inspect
 from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
 
