@@ -1,7 +1,7 @@
 """LazyField: lazy evaluation for Python dataclasses and beyond"""
 
 import inspect
-from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Generic, TypeVar, Union, overload
 
 __all__ = ["Lazy", "lazyfield", "lazy"]
 
