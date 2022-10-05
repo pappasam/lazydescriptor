@@ -22,6 +22,14 @@ class Test:
     my_list: Lazy[list[str]] = lazyfield()
     hello: Lazy[str] = lazyfield(_hello)
 
+    @lazyfield
+    def dep(self) -> int:
+        return 13
+
+    @lazyfield
+    def use(self) -> int:
+        return self.dep + 12
+
 
 # Note: you can use either the regular type or the lazy function wrapped
 # equivalent. Commented out section also works!
@@ -40,8 +48,14 @@ test = Test(
     my_list=lazy(lambda: [str(i) for i in range(10)]),
 )
 
+print("USE", test2.use)
+test2.dep = 200
+print("USE", test2.use)
+
 print(test2.my_int)
 # print(test2.my_int)
+#
+
 
 
 def int_func(x: int) -> int:
