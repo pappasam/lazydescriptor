@@ -4,7 +4,12 @@ import functools
 import inspect
 from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 
-__all__ = ["Lazy", "lazyfield", "lazy"]
+__all__ = [
+    "Lazy",
+    "lazy",
+    "lazyfield",
+    "lazymethod",
+]
 
 _NOTHING = object()
 
