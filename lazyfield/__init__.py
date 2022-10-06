@@ -56,10 +56,6 @@ class LazyField(Generic[T_co]):
         for relationship in self._depends:
             if relationship.name == name:
                 raise ValueError("A method cannot be related to itself")
-            # if not hasattr(owner, relationship):
-            #     raise ValueError(
-            #         f"{owner} has not defined attribute {relationship}"
-            #     )
             owner._relationships.setdefault(relationship.name, set()).add(name)
 
     def __call__(self, obj=None) -> T_co:
