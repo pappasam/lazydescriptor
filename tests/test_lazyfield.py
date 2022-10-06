@@ -2,8 +2,12 @@
 
 from lazyfield import Lazy, LazyField, lazy, lazyfield, lazymethod
 
+# pylint: disable=comparison-with-callable
+# pylint: disable=too-few-public-methods
+
 
 def _return_world() -> str:
+    """My cool function."""
     print("RETURN WORLD", end="")
     return "world"
 
@@ -30,6 +34,7 @@ class MyTestClass:
 
     @lazymethod(my_int)
     def add_numbers(self) -> int:
+        """Docstring to stop complaints."""
         print("ADD NUMBERS", end="")
         return self.my_normal + self.my_int
 
