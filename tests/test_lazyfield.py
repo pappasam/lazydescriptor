@@ -1,7 +1,6 @@
 """Test lazyfield."""
-from dataclasses import dataclass
 
-from lazyfield import Lazy, lazy, lazyfield, lazymethod
+from lazyfield import Lazy, LazyField, lazy, lazyfield, lazymethod
 
 
 def _return_world() -> str:
@@ -9,14 +8,25 @@ def _return_world() -> str:
     return "world"
 
 
-@dataclass
 class MyTestClass:
     """Testing class for lazy values."""
 
     my_normal: int
-    my_int: Lazy[int] = lazyfield()
-    my_str: Lazy[str] = lazyfield()
-    my_list: Lazy[list[str]] = lazyfield()
+    my_int: LazyField[int] = lazyfield()
+    my_str: LazyField[str] = lazyfield()
+    my_list: LazyField[list[str]] = lazyfield()
+
+    def __init__(
+        self,
+        my_normal: int,
+        my_int: Lazy[int],
+        my_str: Lazy[str],
+        my_list: Lazy[list[str]],
+    ) -> None:
+        self.my_normal = my_normal
+        self.my_int = my_int
+        self.my_str = my_str
+        self.my_list = my_list
 
     @lazymethod(my_int)
     def add_numbers(self) -> int:

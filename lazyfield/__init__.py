@@ -6,6 +6,7 @@ from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 
 __all__ = [
     "Lazy",
+    "LazyField",
     "lazy",
     "lazyfield",
     "lazymethod",
@@ -32,7 +33,7 @@ class LazyField(Generic[T_co]):
 
     @overload
     def __init__(
-        self, default: Callable[[Any], T_co], depends: Iterable["Lazy"]
+        self, default: Callable[[Any], T_co], depends: Iterable["LazyField"]
     ) -> None:
         ...
 
@@ -130,9 +131,12 @@ def lazyfield(default=_NOTHING):
 
 
 def lazymethod(
-    *dependencies: Lazy,
+    *dependencies: LazyField,
 ) -> Callable[[Callable[[Any], T_co]], LazyField[T_co]]:
     """Lazy method decorator, handling dependencies."""
+    for dependency in dependencies:
+        if not isinstance(dependency, LazyField):
+            raise TypeError(f"{dependency} must be a LazyField")
 
     def _lazyfield(default: Callable[[Any], T_co]) -> LazyField[T_co]:
         return LazyField(default, dependencies)
