@@ -1,7 +1,8 @@
 """LazyField: lazy evaluation for Python dataclasses and beyond"""
 
+import functools
 import inspect
-from typing import Any, Callable, Generic, TypeVar, Union, overload
+from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 
 __all__ = ["Lazy", "lazyfield", "lazy"]
 
@@ -25,26 +26,41 @@ class LazyField(Generic[T_co]):
         ...
 
     @overload
-    def __init__(self, default: Callable[[Any], T_co]) -> None:
+    def __init__(
+        self, default: Callable[[Any], T_co], depends: Iterable["Lazy"]
+    ) -> None:
         ...
 
     @overload
     def __init__(self) -> None:
         ...
 
-    def __init__(self, default=_NOTHING) -> None:
+    def __init__(self, default=_NOTHING, depends=_NOTHING) -> None:
         self._value = default
-        self._lazy = isinstance(default, LazyField)
+        self._depends = [] if depends is _NOTHING else depends
         self._method_decorator = (
             callable(default)
             and len(inspect.signature(default).parameters) == 1
         )
-        self._private_name = "default"
-        self._private_name_lazy = "default_lazy"
+        self._lazy = isinstance(default, LazyField) or self._method_decorator
+        self.name = "__default"
+        self._private_name = "__default_private"
+        self._private_name_lazy = "__default_lazy"
 
     def __set_name__(self, owner, name):
+        self.name = name
         self._private_name = "_" + name
         self._private_name_lazy = "_" + name + "_lazy"
+        if not hasattr(owner, "_relationships"):
+            owner._relationships = {}
+        for relationship in self._depends:
+            if relationship.name == name:
+                raise ValueError("A method cannot be related to itself")
+            # if not hasattr(owner, relationship):
+            #     raise ValueError(
+            #         f"{owner} has not defined attribute {relationship}"
+            #     )
+            owner._relationships.setdefault(relationship.name, set()).add(name)
 
     def __call__(self, obj=None) -> T_co:
         if obj:
@@ -60,10 +76,13 @@ class LazyField(Generic[T_co]):
         if obj_value is _NOTHING:
             if self._value is _NOTHING:
                 raise AttributeError("Not set")
-            if self._method_decorator:
-                return self._value(obj)
             if self._lazy:
-                setattr(obj, self._private_name, self._value())  # type: ignore
+                result = (
+                    self._value(obj)
+                    if self._method_decorator
+                    else self._value()
+                )
+                setattr(obj, self._private_name, result)  # type: ignore
                 setattr(obj, self._private_name_lazy, False)
                 return getattr(obj, self._private_name)
             return self._value
@@ -75,10 +94,20 @@ class LazyField(Generic[T_co]):
     def __set__(self, obj, value: "Lazy[T_co]") -> None:
         setattr(obj, self._private_name_lazy, isinstance(value, LazyField))
         setattr(obj, self._private_name, value)
+        for dependent in obj._relationships.get(self.name, set()):
+            try:
+                delattr(obj, dependent)
+            except AttributeError:
+                pass
 
     def __delete__(self, obj) -> None:
         delattr(obj, self._private_name)
         delattr(obj, self._private_name_lazy)
+        for dependent in obj._relationships.get(self.name, set()):
+            try:
+                delattr(obj, dependent)
+            except AttributeError:
+                pass
 
 
 Lazy = Union[T_co, LazyField[T_co]]
@@ -90,11 +119,6 @@ def lazyfield() -> LazyField[T_co]:
 
 
 @overload
-def lazyfield(default: Callable[[Any], T_co]) -> LazyField[T_co]:
-    ...
-
-
-@overload
 def lazyfield(default: Lazy[T_co]) -> LazyField[T_co]:
     ...
 
@@ -102,6 +126,17 @@ def lazyfield(default: Lazy[T_co]) -> LazyField[T_co]:
 def lazyfield(default=_NOTHING):
     """Create a lazyfield."""
     return LazyField(default)
+
+
+def lazymethod(
+    *dependencies: Lazy,
+) -> Callable[[Callable[[Any], T_co]], LazyField[T_co]]:
+    """Lazy method decorator, handling dependencies."""
+
+    def _lazyfield(default: Callable[[Any], T_co]) -> LazyField[T_co]:
+        return LazyField(default, dependencies)
+
+    return _lazyfield
 
 
 def lazy(value: Callable[[], T_co]) -> LazyField[T_co]:

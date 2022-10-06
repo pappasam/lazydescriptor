@@ -2,14 +2,9 @@
 
 from dataclasses import dataclass
 
-from lazyfield import Lazy, lazy, lazyfield
+from lazyfield import Lazy, lazy, lazyfield, lazymethod
 
 # pylint: disable=invalid-name
-
-
-def _hello(_test: "Test") -> str:
-    print("I ran hello")
-    return "I RAN METHOD!!! YOOOO, BRUTHA!"
 
 
 @dataclass
@@ -20,14 +15,14 @@ class Test:
     my_int: Lazy[int] = lazyfield()
     my_str: Lazy[str] = lazyfield()
     my_list: Lazy[list[str]] = lazyfield()
-    hello: Lazy[str] = lazyfield(_hello)
 
-    @lazyfield
+    @lazymethod(my_int)
     def dep(self) -> int:
         return 13
 
-    @lazyfield
+    @lazymethod(dep)
     def use(self) -> int:
+        print("Use is running")
         return self.dep + 12
 
 
@@ -51,11 +46,12 @@ test = Test(
 print("USE", test2.use)
 test2.dep = 200
 print("USE", test2.use)
+test.my_normal = 4
+print("USE", test2.use)
 
 print(test2.my_int)
 # print(test2.my_int)
 #
-
 
 
 def int_func(x: int) -> int:
@@ -73,19 +69,6 @@ int_func(test.my_int)
 
 test.my_int = 13
 
-print(test.hello)
-print(test.hello)
-
-test.hello = "New Value"
-print(test.hello)
-print(test.hello)
-del test.hello
-print(test.hello)
-print(test.hello)
-print(test)
-
-
-print("test on test 2", test2.hello)
 
 for _ in range(3):
     print(test.my_int)

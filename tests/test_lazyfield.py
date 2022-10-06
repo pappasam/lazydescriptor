@@ -1,12 +1,7 @@
 """Test lazyfield."""
 from dataclasses import dataclass
 
-from lazyfield import Lazy, lazy, lazyfield
-
-
-def _add_numbers(_test: "MyTestClass") -> int:
-    print("ADD NUMBERS", end="")
-    return _test.my_normal + _test.my_int
+from lazyfield import Lazy, lazy, lazyfield, lazymethod
 
 
 def _return_world() -> str:
@@ -22,7 +17,11 @@ class MyTestClass:
     my_int: Lazy[int] = lazyfield()
     my_str: Lazy[str] = lazyfield()
     my_list: Lazy[list[str]] = lazyfield()
-    add_numbers: Lazy[int] = lazyfield(_add_numbers)
+
+    @lazymethod(my_int)
+    def add_numbers(self) -> int:
+        print("ADD NUMBERS", end="")
+        return self.my_normal + self.my_int
 
 
 TEST1 = MyTestClass(
@@ -49,11 +48,24 @@ def test_all(capsys):
     assert captured.out == "ADD NUMBERS"
     assert result == 25
 
-    # Test method runs again
+    # Test method doesn't run again
+    result = TEST1.add_numbers
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert result == 25
+
+    # Modify dependency, and see if it runs again
+    TEST1.my_int = 13
     result = TEST1.add_numbers
     captured = capsys.readouterr()
     assert captured.out == "ADD NUMBERS"
-    assert result == 25
+    assert result == 26
+
+    # Now make sure it doesn't run again, but result is cached
+    result = TEST1.add_numbers
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert result == 26
 
     # Test function
     result = TEST1.my_str
