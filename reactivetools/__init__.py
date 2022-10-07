@@ -97,13 +97,15 @@ class RA(Generic[T_co]):
         for relationship in self.depends:
             if relationship.name == name:
                 raise ValueError("A method cannot be related to itself")
-            owner._relationships.setdefault(relationship.name, set()).add(name)
+            if not relationship.name in owner._relationships:
+                owner._relationships[relationship.name] = set()
+            owner._relationships[relationship.name].add(name)
 
     def __get__(self, obj, objtype=None) -> T_co:
         if obj is None:
             if self.default is _NOTHING:
                 raise AttributeError("Not set")
-            return _NOTHING  # type: ignore
+            return self.default
         obj_value = getattr(obj, self.private_name, _NOTHING)
         if obj_value is _NOTHING:
             if self.default is _NOTHING:
