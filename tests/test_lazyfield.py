@@ -1,6 +1,6 @@
-"""Test lazyfield."""
+"""Test reactivetools."""
 
-from lazyfield import Lazy, LazyField, lazyfield, lazymethod, thunk
+from lazyfield import RA, RI, rattr, rmethod, thunk
 
 # pylint: disable=comparison-with-callable
 # pylint: disable=too-few-public-methods
@@ -16,23 +16,23 @@ class MyTestClass:
     """Testing class for lazy values."""
 
     my_normal: int
-    my_int: LazyField[int] = lazyfield()
-    my_str: LazyField[str] = lazyfield()
-    my_list: LazyField[list[str]] = lazyfield()
+    my_int: RA[int] = rattr()
+    my_str: RA[str] = rattr()
+    my_list: RA[list[str]] = rattr()
 
     def __init__(
         self,
         my_normal: int,
-        my_int: Lazy[int],
-        my_str: Lazy[str],
-        my_list: Lazy[list[str]],
+        my_int: RI[int],
+        my_str: RI[str],
+        my_list: RI[list[str]],
     ) -> None:
         self.my_normal = my_normal
         self.my_int = my_int
         self.my_str = my_str
         self.my_list = my_list
 
-    @lazymethod(my_int)
+    @rmethod(my_int)
     def add_numbers(self) -> int:
         """Docstring to stop complaints."""
         print("ADD NUMBERS", end="")

@@ -1,4 +1,7 @@
-"""LazyField: lazy evaluation for Python dataclasses and beyond"""
+"""Reactive tools to make Python a reactive programming experience.
+
+See: <https://en.wikipedia.org/wiki/Reactive_programming>
+"""
 
 import functools
 import inspect
@@ -8,11 +11,11 @@ from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 # pylint: disable=too-many-instance-attributes
 
 __all__ = [
-    "LazyField",
-    "Lazy",
+    "RA",
+    "RI",
+    "rattr",
+    "rmethod",
     "thunk",
-    "lazyfield",
-    "lazymethod",
 ]
 
 _NOTHING = object()
@@ -21,7 +24,7 @@ T_co = TypeVar("T_co", covariant=True)
 
 
 class Thunk(Generic[T_co]):
-    """Wrap a callable function with no arguments in a class."""
+    """Wrap, and validate, a callable function with no required arguments."""
 
     def __init__(self, value: Callable[[], T_co]) -> None:
         if not callable(value):
@@ -33,7 +36,7 @@ class Thunk(Generic[T_co]):
 
 
 class Method(Generic[T_co]):
-    """Wrap a callable function with one argument in a class."""
+    """Wrap, and validate, a callable function with one required argument."""
 
     def __init__(self, value: Callable[[Any], T_co]) -> None:
         if not callable(value):
@@ -54,20 +57,22 @@ class Method(Generic[T_co]):
         self.value = value
 
 
-class LazyField(Generic[T_co]):
-    """A lazy data descriptor.
+# Reactive Input
+RI = Union[T_co, Thunk[T_co], Method[T_co]]
+
+
+class RA(Generic[T_co]):
+    """A data descriptor that manages Reactive class Attributes.
 
     Useful with normal objects, dataclasses, and anything else really.
     """
 
     @overload
-    def __init__(self, default: Union[T_co, Thunk[T_co]]) -> None:
+    def __init__(self, default: RI[T_co]) -> None:
         ...
 
     @overload
-    def __init__(
-        self, default: Method[T_co], depends: Iterable["LazyField"]
-    ) -> None:
+    def __init__(self, default: Method[T_co], depends: Iterable["RA"]) -> None:
         ...
 
     @overload
@@ -82,12 +87,10 @@ class LazyField(Generic[T_co]):
         self.is_lazy = self.is_thunk or self.is_method
         self.name = "__default"
         self.private_name = "__default_private"
-        self.private_name_lazy = "__default_lazy"
 
     def __set_name__(self, owner, name):
         self.name = name
         self.private_name = "_" + name
-        self.private_name_lazy = "_" + name + "_lazy"
         if not hasattr(owner, "_relationships"):
             owner._relationships = {}
         for relationship in self.depends:
@@ -111,7 +114,7 @@ class LazyField(Generic[T_co]):
                     else self.default.value()
                 )
                 setattr(obj, self.private_name, result)
-                return getattr(obj, self.private_name)
+                return result
             return self.default
         if isinstance(obj_value, Thunk):
             setattr(obj, self.private_name, obj_value.value())
@@ -138,38 +141,56 @@ class LazyField(Generic[T_co]):
                 pass
 
 
-Lazy = Union[T_co, Thunk[T_co], Method[T_co]]
-
-
 @overload
-def lazyfield() -> LazyField[T_co]:
+def rattr() -> RA[T_co]:
     ...
 
 
 @overload
-def lazyfield(default: Union[T_co, Thunk[T_co]]) -> LazyField[T_co]:
+def rattr(default: RI[T_co]) -> RA[T_co]:
     ...
 
 
-def lazyfield(default=_NOTHING):
-    """Create a lazyfield."""
-    return LazyField(default)
+def rattr(default=_NOTHING):
+    """Initialize a reactive attribute.
+
+    Example:
+        class MyReactive:
+            my_int: RA[int] = rattr()
+            my_str_with_default: RA[str] = rattr("my-default")
+    """
+    return RA(default)
 
 
-def lazymethod(
-    *dependencies: LazyField,
-) -> Callable[[Callable[[Any], T_co]], LazyField[T_co]]:
-    """Lazy method decorator, handling dependencies."""
+def rmethod(
+    *dependencies: RA,
+) -> Callable[[Callable[[Any], T_co]], RA[T_co]]:
+    """Initialize a reactive method.
+
+    Generally useful as a decorator. Example:
+        class MyReactive:
+            my_int: RA[int] = rattr()
+
+            @rmethod(my_int)
+            def add_int(self) -> int:
+                return self.my_int + 12
+    """
     for dependency in dependencies:
-        if not isinstance(dependency, LazyField):
+        if not isinstance(dependency, RA):
             raise TypeError(f"{dependency} must be a LazyField")
 
-    def _lazyfield(default: Callable[[Any], T_co]) -> LazyField[T_co]:
-        return LazyField(Method(default), dependencies)
+    def _rattr(default: Callable[[Any], T_co]) -> RA[T_co]:
+        return RA(Method(default), dependencies)
 
-    return _lazyfield
+    return _rattr
 
 
 def thunk(value: Callable[[], T_co]) -> Thunk[T_co]:
-    """Get a thunk, to be used lazily."""
+    """Wrap a thunk (one arg function) for rattr.
+
+    Example:
+        class MyReactive:
+            my_int: RA[int] = rattr()
+            my_int_with_lazy_default: RA[int] = rattr(thunk(lambda: 12))
+    """
     return Thunk(value)
