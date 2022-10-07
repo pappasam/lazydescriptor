@@ -12,9 +12,9 @@ profile = "black"
 line_length = 79
 
 [tool.poetry]
-name = "lazyfield"
+name = "reactivetools"
 version = "0.1.0"
-description = ""
+description = "Typesafe, reactive tooling in Python with data descriptions"
 authors = ["Sam Roeca <samuel.roeca@gmail.com>"]
 readme = "README.md"
 
@@ -30,4 +30,3 @@ isort = "^5.10.1"
 toml-sort = "^0.20.1"
 pyright = "^1.1.272"
 pytest = "^7.1.3"
-
