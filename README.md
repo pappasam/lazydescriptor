@@ -1,6 +1,6 @@
 # Reactive Tools
 
-This tool brings reactivity to native Python.
+This Pure-Python, no-dependency library brings reactivity to native Python.
 
 ## Example
 
