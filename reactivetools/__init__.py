@@ -19,6 +19,8 @@ __all__ = [
 
 _NOTHING = object()
 
+_EMPTY_ITERABLE: tuple = tuple()
+
 T_co = TypeVar("T_co", covariant=True)
 
 
@@ -125,7 +127,7 @@ class RA(Generic[T_co]):
         self, obj, value: Union[T_co, Thunk[T_co], Method[T_co]]
     ) -> None:
         setattr(obj, self.private_name, value)
-        for dependent in obj._relationships.get(self.name, set()):
+        for dependent in obj._relationships.get(self.name, _EMPTY_ITERABLE):
             try:
                 delattr(obj, dependent)
             except AttributeError:
@@ -133,7 +135,7 @@ class RA(Generic[T_co]):
 
     def __delete__(self, obj) -> None:
         delattr(obj, self.private_name)
-        for dependent in obj._relationships.get(self.name, set()):
+        for dependent in obj._relationships.get(self.name, _EMPTY_ITERABLE):
             try:
                 delattr(obj, dependent)
             except AttributeError:
