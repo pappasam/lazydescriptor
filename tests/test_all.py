@@ -1,6 +1,6 @@
-"""Test reactivetools."""
+"""All tests."""
 
-from lazyfield import RA, RI, rattr, rmethod, thunk
+from reactivetools import RA, RI, rattr, rmethod, thunk
 
 # pylint: disable=comparison-with-callable
 # pylint: disable=too-few-public-methods
