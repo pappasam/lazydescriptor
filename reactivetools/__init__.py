@@ -3,7 +3,6 @@
 See: <https://en.wikipedia.org/wiki/Reactive_programming>
 """
 
-import functools
 import inspect
 from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 
