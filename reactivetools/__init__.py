@@ -66,6 +66,9 @@ class RA(Generic[T_co]):
     """A data descriptor that manages Reactive class Attributes.
 
     Useful with normal objects, dataclasses, and anything else really.
+
+    Private names are prepended with a '_$ ', an homage to svelte and an extra
+    step that makes the attribute inaccessible without getattr().
     """
 
     @overload
@@ -86,20 +89,20 @@ class RA(Generic[T_co]):
         self.is_thunk = isinstance(default, Thunk)
         self.is_method = isinstance(default, Method)
         self.is_lazy = self.is_thunk or self.is_method
-        self.name = "__default"
-        self.private_name = "__default_private"
+        self.name = "default"
+        self.private_name = "_$ default"
 
     def __set_name__(self, owner, name):
         self.name = name
-        self.private_name = "_" + name
-        if not hasattr(owner, "_relationships"):
-            owner._relationships = {}
+        self.private_name = "_$ " + name
+        if not hasattr(owner, "_ra_relationships"):
+            owner._ra_relationships = {}
         for relationship in self.depends:
             if relationship.name == name:
                 raise ValueError("A method cannot be related to itself")
-            if not relationship.name in owner._relationships:
-                owner._relationships[relationship.name] = set()
-            owner._relationships[relationship.name].add(name)
+            if not relationship.name in owner._ra_relationships:
+                owner._ra_relationships[relationship.name] = set()
+            owner._ra_relationships[relationship.name].add(name)
 
     def __get__(self, obj, objtype=None) -> T_co:
         if obj is None:
@@ -129,7 +132,7 @@ class RA(Generic[T_co]):
         self, obj, value: Union[T_co, Thunk[T_co], Method[T_co]]
     ) -> None:
         setattr(obj, self.private_name, value)
-        for dependent in obj._relationships.get(self.name, _EMPTY_ITERABLE):
+        for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
             try:
                 delattr(obj, dependent)
             except AttributeError:
@@ -137,7 +140,7 @@ class RA(Generic[T_co]):
 
     def __delete__(self, obj) -> None:
         delattr(obj, self.private_name)
-        for dependent in obj._relationships.get(self.name, _EMPTY_ITERABLE):
+        for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
             try:
                 delattr(obj, dependent)
             except AttributeError:
