@@ -1,6 +1,6 @@
 """Test lazyfield."""
 
-from lazyfield import Lazy, LazyField, lazy, lazyfield, lazymethod
+from lazyfield import Lazy, LazyField, lazyfield, lazymethod, thunk
 
 # pylint: disable=comparison-with-callable
 # pylint: disable=too-few-public-methods
@@ -41,16 +41,16 @@ class MyTestClass:
 
 TEST1 = MyTestClass(
     my_normal=13,
-    my_int=lazy(lambda: 12),
-    my_str=lazy(_return_world),
-    my_list=lazy(lambda: [str(i) for i in range(10)]),
+    my_int=thunk(lambda: 12),
+    my_str=thunk(_return_world),
+    my_list=thunk(lambda: [str(i) for i in range(10)]),
 )
 
 TEST2 = MyTestClass(
     my_normal=13,
     my_int=12,
-    my_str=lazy(lambda: "hello"),
-    my_list=lazy(lambda: [str(i) for i in range(10)]),
+    my_str=thunk(lambda: "hello"),
+    my_list=thunk(lambda: [str(i) for i in range(10)]),
 )
 
 

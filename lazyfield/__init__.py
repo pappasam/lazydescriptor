@@ -4,10 +4,13 @@ import functools
 import inspect
 from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 
+# pylint: disable=too-few-public-methods
+# pylint: disable=too-many-instance-attributes
+
 __all__ = [
-    "Lazy",
     "LazyField",
-    "lazy",
+    "Lazy",
+    "thunk",
     "lazyfield",
     "lazymethod",
 ]
@@ -17,6 +20,40 @@ _NOTHING = object()
 T_co = TypeVar("T_co", covariant=True)
 
 
+class Thunk(Generic[T_co]):
+    """Wrap a callable function with no arguments in a class."""
+
+    def __init__(self, value: Callable[[], T_co]) -> None:
+        if not callable(value):
+            raise ValueError(f"{value} is not callable")
+        for pvalue in inspect.signature(value).parameters.values():
+            if pvalue.default is inspect.Parameter.empty:
+                raise ValueError(f"{value} has required parameters")
+        self.value = value
+
+
+class Method(Generic[T_co]):
+    """Wrap a callable function with one argument in a class."""
+
+    def __init__(self, value: Callable[[Any], T_co]) -> None:
+        if not callable(value):
+            raise ValueError("Is not callable")
+        parameters = inspect.signature(value).parameters
+        if len(parameters) == 0:
+            raise ValueError("Must take at least 1 parameter")
+        for i, (pname, pvalue) in enumerate(parameters.items()):
+            if i == 0:
+                if pname != "self":
+                    raise ValueError("First argument must be self")
+                if pvalue.default is not inspect.Parameter.empty:
+                    raise ValueError("'self' must be a non-default argument")
+            elif pvalue.default is inspect.Parameter.empty:
+                raise ValueError(
+                    f"{value} has required parameters other than self"
+                )
+        self.value = value
+
+
 class LazyField(Generic[T_co]):
     """A lazy data descriptor.
 
@@ -24,16 +61,12 @@ class LazyField(Generic[T_co]):
     """
 
     @overload
-    def __init__(self, default: T_co) -> None:
-        ...
-
-    @overload
-    def __init__(self, default: Callable[[], T_co]) -> None:
+    def __init__(self, default: Union[T_co, Thunk[T_co]]) -> None:
         ...
 
     @overload
     def __init__(
-        self, default: Callable[[Any], T_co], depends: Iterable["LazyField"]
+        self, default: Method[T_co], depends: Iterable["LazyField"]
     ) -> None:
         ...
 
@@ -42,60 +75,54 @@ class LazyField(Generic[T_co]):
         ...
 
     def __init__(self, default=_NOTHING, depends=_NOTHING) -> None:
-        self._value = default
-        self._depends = [] if depends is _NOTHING else depends
-        self._method_decorator = (
-            callable(default)
-            and len(inspect.signature(default).parameters) == 1
-        )
-        self._lazy = isinstance(default, LazyField) or self._method_decorator
+        self.default = default
+        self.depends = [] if depends is _NOTHING else depends
+        self.is_thunk = isinstance(default, Thunk)
+        self.is_method = isinstance(default, Method)
+        self.is_lazy = self.is_thunk or self.is_method
         self.name = "__default"
-        self._private_name = "__default_private"
-        self._private_name_lazy = "__default_lazy"
+        self.private_name = "__default_private"
+        self.private_name_lazy = "__default_lazy"
 
     def __set_name__(self, owner, name):
         self.name = name
-        self._private_name = "_" + name
-        self._private_name_lazy = "_" + name + "_lazy"
+        self.private_name = "_" + name
+        self.private_name_lazy = "_" + name + "_lazy"
         if not hasattr(owner, "_relationships"):
             owner._relationships = {}
-        for relationship in self._depends:
+        for relationship in self.depends:
             if relationship.name == name:
                 raise ValueError("A method cannot be related to itself")
             owner._relationships.setdefault(relationship.name, set()).add(name)
 
-    def __call__(self, obj=None) -> T_co:
-        if obj:
-            return self._value(obj)
-        return self._value()
-
     def __get__(self, obj, objtype=None) -> T_co:
         if obj is None:
-            if self._value is _NOTHING:
+            if self.default is _NOTHING:
                 raise AttributeError("Not set")
             return _NOTHING  # type: ignore
-        obj_value = getattr(obj, self._private_name, _NOTHING)
+        obj_value = getattr(obj, self.private_name, _NOTHING)
         if obj_value is _NOTHING:
-            if self._value is _NOTHING:
+            if self.default is _NOTHING:
                 raise AttributeError("Not set")
-            if self._lazy:
+            if self.is_lazy:
                 result = (
-                    self._value(obj)
-                    if self._method_decorator
-                    else self._value()
+                    self.default.value(obj)
+                    if self.is_method
+                    else self.default.value()
                 )
-                setattr(obj, self._private_name, result)  # type: ignore
-                setattr(obj, self._private_name_lazy, False)
-                return getattr(obj, self._private_name)
-            return self._value
-        if getattr(obj, self._private_name_lazy, False):
-            setattr(obj, self._private_name, obj_value())  # type: ignore
-            setattr(obj, self._private_name_lazy, False)
-        return getattr(obj, self._private_name)
+                setattr(obj, self.private_name, result)
+                return getattr(obj, self.private_name)
+            return self.default
+        if isinstance(obj_value, Thunk):
+            setattr(obj, self.private_name, obj_value.value())
+        if isinstance(obj_value, Method):
+            setattr(obj, self.private_name, obj_value.value(obj))
+        return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: "Lazy[T_co]") -> None:
-        setattr(obj, self._private_name_lazy, isinstance(value, LazyField))
-        setattr(obj, self._private_name, value)
+    def __set__(
+        self, obj, value: Union[T_co, Thunk[T_co], Method[T_co]]
+    ) -> None:
+        setattr(obj, self.private_name, value)
         for dependent in obj._relationships.get(self.name, set()):
             try:
                 delattr(obj, dependent)
@@ -103,8 +130,7 @@ class LazyField(Generic[T_co]):
                 pass
 
     def __delete__(self, obj) -> None:
-        delattr(obj, self._private_name)
-        delattr(obj, self._private_name_lazy)
+        delattr(obj, self.private_name)
         for dependent in obj._relationships.get(self.name, set()):
             try:
                 delattr(obj, dependent)
@@ -112,7 +138,7 @@ class LazyField(Generic[T_co]):
                 pass
 
 
-Lazy = Union[T_co, LazyField[T_co]]
+Lazy = Union[T_co, Thunk[T_co], Method[T_co]]
 
 
 @overload
@@ -121,7 +147,7 @@ def lazyfield() -> LazyField[T_co]:
 
 
 @overload
-def lazyfield(default: Lazy[T_co]) -> LazyField[T_co]:
+def lazyfield(default: Union[T_co, Thunk[T_co]]) -> LazyField[T_co]:
     ...
 
 
@@ -139,13 +165,11 @@ def lazymethod(
             raise TypeError(f"{dependency} must be a LazyField")
 
     def _lazyfield(default: Callable[[Any], T_co]) -> LazyField[T_co]:
-        return LazyField(default, dependencies)
+        return LazyField(Method(default), dependencies)
 
     return _lazyfield
 
 
-def lazy(value: Callable[[], T_co]) -> LazyField[T_co]:
-    """Get a lazy thing, setting a value."""
-    if not callable(value) or len(inspect.signature(value).parameters) > 0:
-        raise TypeError("Must be a callable with 0 parameters")
-    return LazyField(value)
+def thunk(value: Callable[[], T_co]) -> Thunk[T_co]:
+    """Get a thunk, to be used lazily."""
+    return Thunk(value)
