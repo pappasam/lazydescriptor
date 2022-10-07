@@ -13,7 +13,7 @@ __all__ = [
     "RA",
     "RI",
     "rattr",
-    "rmethod",
+    "rproperty",
     "thunk",
 ]
 
@@ -168,16 +168,17 @@ def rattr(default=_NOTHING):
     return RA(default)
 
 
-def rmethod(
+def rproperty(
     *dependencies: RA,
 ) -> Callable[[Callable[[Any], T_co]], RA[T_co]]:
-    """Initialize a reactive method.
+    """Initialize a reactive method, making it behave a bit like the @property
+    decorator. Eg, it does not need to be called.
 
     Generally useful as a decorator. Example:
         class MyReactive:
             my_int: RA[int] = rattr()
 
-            @rmethod(my_int)
+            @rproperty(my_int)
             def add_int(self) -> int:
                 return self.my_int + 12
     """

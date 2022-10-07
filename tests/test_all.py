@@ -1,6 +1,6 @@
 """All tests."""
 
-from reactivetools import RA, RI, rattr, rmethod, thunk
+from reactivetools import RA, RI, rattr, rproperty, thunk
 
 # pylint: disable=comparison-with-callable
 # pylint: disable=too-few-public-methods
@@ -32,7 +32,7 @@ class MyTestClass:
         self.my_str = my_str
         self.my_list = my_list
 
-    @rmethod(my_int)
+    @rproperty(my_int)
     def add_numbers(self) -> int:
         """Docstring to stop complaints."""
         print("ADD NUMBERS", end="")
@@ -45,6 +45,7 @@ TEST1 = MyTestClass(
     my_str=thunk(_return_world),
     my_list=thunk(lambda: [str(i) for i in range(10)]),
 )
+
 
 TEST2 = MyTestClass(
     my_normal=13,
