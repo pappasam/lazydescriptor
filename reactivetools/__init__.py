@@ -128,9 +128,7 @@ class RA(Generic[T_co]):
             setattr(obj, self.private_name, obj_value.value(obj))
         return getattr(obj, self.private_name)
 
-    def __set__(
-        self, obj, value: Union[T_co, Thunk[T_co], Method[T_co]]
-    ) -> None:
+    def __set__(self, obj, value: RI[T_co]) -> None:
         setattr(obj, self.private_name, value)
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
             try:
@@ -193,8 +191,9 @@ def rproperty(
 
 
 def thunk(value: Callable[[], T_co]) -> Thunk[T_co]:
-    """Wrap a thunk (one arg function) for rattr.
+    """Wrap a thunk (no argument function) for rattr.
 
+    See: <https://en.wikipedia.org/wiki/Thunk>
     Example:
         class MyReactive:
             my_int: RA[int] = rattr()
