@@ -182,7 +182,7 @@ def rproperty(
     """
     for dependency in dependencies:
         if not isinstance(dependency, RA):
-            raise TypeError(f"{dependency} must be a LazyField")
+            raise TypeError(f"{dependency} must be a RA (Reactive Attribute)")
 
     def _rattr(default: Callable[[Any], T_co]) -> RA[T_co]:
         return RA(Method(default), dependencies)
