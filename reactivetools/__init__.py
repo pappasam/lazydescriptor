@@ -3,6 +3,8 @@
 See: <https://en.wikipedia.org/wiki/Reactive_programming>
 """
 
+from __future__ import annotations
+
 import inspect
 from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
 
@@ -76,7 +78,7 @@ class RA(Generic[T_co]):
         ...
 
     @overload
-    def __init__(self, default: Method[T_co], depends: Iterable["RA"]) -> None:
+    def __init__(self, default: Method[T_co], depends: Iterable[RA]) -> None:
         ...
 
     @overload
