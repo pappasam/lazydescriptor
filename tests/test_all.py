@@ -38,6 +38,12 @@ class MyTestClass:
         print("ADD NUMBERS", end="")
         return self.my_normal + self.my_int
 
+    @rproperty(add_numbers)
+    def more_adding(self) -> int:
+        """Docstring to stop complaints."""
+        print("MORE ADDING", end="")
+        return self.add_numbers + 12
+
 
 TEST1 = MyTestClass(
     my_normal=13,
@@ -94,3 +100,26 @@ def test_all(capsys):
     captured = capsys.readouterr()
     assert captured.out == ""
     assert result == "world"
+
+    # Test second function runs
+    result = TEST1.more_adding
+    captured = capsys.readouterr()
+    assert captured.out == "MORE ADDING"
+    assert result == 38
+
+    # Here it gets fun. Check to see if we set more_adding explicitly, then set
+    # add_numbers explicitly, if we end up getting a recomputation
+    TEST1.more_adding = 15
+    TEST1.add_numbers = 1
+    result = TEST1.more_adding
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert result == 15
+
+    # Finally, now we'll delete add_numbers and see if things compute again
+    # add_numbers explicitly, if we end up getting a recomputation
+    del TEST1.more_adding
+    result = TEST1.more_adding
+    captured = capsys.readouterr()
+    assert captured.out == "MORE ADDING"
+    assert result == 13

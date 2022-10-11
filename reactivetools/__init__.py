@@ -22,6 +22,7 @@ __all__ = [
 _NOTHING = object()
 
 _EMPTY_ITERABLE: tuple = tuple()
+_EMPTY_SET: set[str] = set()
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -71,6 +72,16 @@ class RA(Generic[T_co]):
 
     Private names are prepended with a '_$ ', an homage to svelte and an extra
     step that makes the attribute inaccessible without getattr().
+
+    This descriptor performs two semi-weird mutations:
+        1. Creates a class variable called '_ra_relationships'. This is a
+            dictionary documenting the fields that depend on each field
+        2. Creates an instance variable called '_ra_methods_autoset'. This is a
+            set containing all method names whose current values represent an
+            original computation of the method itself. This is necessary to
+            prevent unexpected re-computation for fields that have been
+            manually overridden by users. Since dependents can only be methods,
+            this trick somehow works!
     """
 
     @overload
@@ -122,6 +133,10 @@ class RA(Generic[T_co]):
                     else self.default.value()
                 )
                 setattr(obj, self.private_name, result)
+                if self.is_method:
+                    if not hasattr(obj, "_ra_methods_autoset"):
+                        obj._ra_methods_autoset = set()
+                    obj._ra_methods_autoset.add(self.name)
                 return result
             return self.default
         if isinstance(obj_value, Thunk):
@@ -131,20 +146,30 @@ class RA(Generic[T_co]):
         return getattr(obj, self.private_name)
 
     def __set__(self, obj, value: RI[T_co]) -> None:
+        methods_autoset: set[str] = getattr(
+            obj, "_ra_methods_autoset", _EMPTY_SET
+        )
+        methods_autoset.discard(self.name)
         setattr(obj, self.private_name, value)
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
-            try:
-                delattr(obj, dependent)
-            except AttributeError:
-                pass
+            if dependent in methods_autoset:
+                try:
+                    delattr(obj, dependent)
+                except AttributeError:
+                    pass
 
     def __delete__(self, obj) -> None:
+        methods_autoset: set[str] = getattr(
+            obj, "_ra_methods_autoset", _EMPTY_SET
+        )
+        methods_autoset.discard(self.name)
         delattr(obj, self.private_name)
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
-            try:
-                delattr(obj, dependent)
-            except AttributeError:
-                pass
+            if dependent in methods_autoset:
+                try:
+                    delattr(obj, dependent)
+                except AttributeError:
+                    pass
 
 
 @overload
