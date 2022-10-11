@@ -101,7 +101,6 @@ class RA(Generic[T_co]):
         self.depends = [] if depends is _NOTHING else depends
         self.is_thunk = isinstance(default, Thunk)
         self.is_method = isinstance(default, Method)
-        self.is_lazy = self.is_thunk or self.is_method
         self.name = "default"
         self.private_name = "_$ default"
 
@@ -126,22 +125,21 @@ class RA(Generic[T_co]):
         if obj_value is _NOTHING:
             if self.default is _NOTHING:
                 raise AttributeError("Not set")
-            if self.is_lazy:
-                result = (
-                    self.default.value(obj)
-                    if self.is_method
-                    else self.default.value()
-                )
+            if self.is_thunk:
+                result = self.default.value()
                 setattr(obj, self.private_name, result)
-                if self.is_method:
-                    if not hasattr(obj, "_ra_methods_autoset"):
-                        obj._ra_methods_autoset = set()
-                    obj._ra_methods_autoset.add(self.name)
+                return result
+            if self.is_method:
+                result = self.default.value(obj)
+                setattr(obj, self.private_name, result)
+                if not hasattr(obj, "_ra_methods_autoset"):
+                    obj._ra_methods_autoset = set()
+                obj._ra_methods_autoset.add(self.name)
                 return result
             return self.default
         if isinstance(obj_value, Thunk):
             setattr(obj, self.private_name, obj_value.value())
-        if isinstance(obj_value, Method):
+        elif isinstance(obj_value, Method):
             setattr(obj, self.private_name, obj_value.value(obj))
         return getattr(obj, self.private_name)
 
