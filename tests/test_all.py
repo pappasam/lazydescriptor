@@ -61,7 +61,7 @@ TEST2 = MyTestClass(
 )
 
 
-def test_all(capsys: CaptureFixture) -> None:
+def test_all(capsys) -> None:
     """Test all methods."""
 
     # Test method
