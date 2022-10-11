@@ -61,7 +61,7 @@ TEST2 = MyTestClass(
 )
 
 
-def test_all(capsys):
+def test_all(capsys: CaptureFixture) -> None:
     """Test all methods."""
 
     # Test method
@@ -90,16 +90,16 @@ def test_all(capsys):
     assert result == 26
 
     # Test function
-    result = TEST1.my_str
+    result_str = TEST1.my_str
     captured = capsys.readouterr()
     assert captured.out == "RETURN WORLD"
-    assert result == "world"
+    assert result_str == "world"
 
     # Test function does not run again
-    result = TEST1.my_str
+    result_str = TEST1.my_str
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert result == "world"
+    assert result_str == "world"
 
     # Test second function runs
     result = TEST1.more_adding
