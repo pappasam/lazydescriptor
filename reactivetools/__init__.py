@@ -61,8 +61,8 @@ class Method(Generic[T_co]):
         self.value = value
 
 
-# Reactive Input
-RI = Union[T_co, Thunk[T_co], Method[T_co]]
+# Reactive Input (either realized for deferred (thunk); the input to __set__)
+RI = Union[T_co, Thunk[T_co]]
 
 
 class RA(Generic[T_co]):
@@ -139,8 +139,6 @@ class RA(Generic[T_co]):
             return self.default
         if isinstance(obj_value, Thunk):
             setattr(obj, self.private_name, obj_value.value())
-        elif isinstance(obj_value, Method):
-            setattr(obj, self.private_name, obj_value.value(obj))
         return getattr(obj, self.private_name)
 
     def __set__(self, obj, value: RI[T_co]) -> None:
