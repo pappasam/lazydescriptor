@@ -21,7 +21,6 @@ __all__ = [
 
 _NOTHING = object()
 
-_EMPTY_ITERABLE: tuple = tuple()
 _EMPTY_SET: set[str] = set()
 
 T_co = TypeVar("T_co", covariant=True)
@@ -147,7 +146,7 @@ class RA(Generic[T_co]):
         )
         methods_autoset.discard(self.name)
         setattr(obj, self.private_name, value)
-        for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
+        for dependent in obj._ra_relationships.get(self.name, _EMPTY_SET):
             if dependent in methods_autoset:
                 try:
                     delattr(obj, dependent)
@@ -160,7 +159,7 @@ class RA(Generic[T_co]):
         )
         methods_autoset.discard(self.name)
         delattr(obj, self.private_name)
-        for dependent in obj._ra_relationships.get(self.name, _EMPTY_ITERABLE):
+        for dependent in obj._ra_relationships.get(self.name, _EMPTY_SET):
             if dependent in methods_autoset:
                 try:
                     delattr(obj, dependent)
