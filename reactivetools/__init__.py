@@ -141,30 +141,24 @@ class RA(Generic[T]):
         return getattr(obj, self.private_name)
 
     def __set__(self, obj, value: RI[T]) -> None:
+        setattr(obj, self.private_name, value)
         methods_autoset: set[str] = getattr(
             obj, "_ra_methods_autoset", _EMPTY_SET
         )
         methods_autoset.discard(self.name)
-        setattr(obj, self.private_name, value)
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_SET):
             if dependent in methods_autoset:
-                try:
-                    delattr(obj, dependent)
-                except AttributeError:
-                    pass
+                delattr(obj, dependent)
 
     def __delete__(self, obj) -> None:
+        delattr(obj, self.private_name)
         methods_autoset: set[str] = getattr(
             obj, "_ra_methods_autoset", _EMPTY_SET
         )
         methods_autoset.discard(self.name)
-        delattr(obj, self.private_name)
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_SET):
             if dependent in methods_autoset:
-                try:
-                    delattr(obj, dependent)
-                except AttributeError:
-                    pass
+                delattr(obj, dependent)
 
 
 @overload
