@@ -23,13 +23,13 @@ _NOTHING = object()
 
 _EMPTY_SET: set[str] = set()
 
-T_co = TypeVar("T_co", covariant=True)
+T = TypeVar("T")
 
 
-class Thunk(Generic[T_co]):
+class Thunk(Generic[T]):
     """Wrap, and validate, a callable function with no required arguments."""
 
-    def __init__(self, value: Callable[[], T_co]) -> None:
+    def __init__(self, value: Callable[[], T]) -> None:
         if not callable(value):
             raise ValueError(f"{value} is not callable")
         for pvalue in inspect.signature(value).parameters.values():
@@ -38,10 +38,10 @@ class Thunk(Generic[T_co]):
         self.value = value
 
 
-class Method(Generic[T_co]):
+class Method(Generic[T]):
     """Wrap, and validate, a callable function with one required argument."""
 
-    def __init__(self, value: Callable[[Any], T_co]) -> None:
+    def __init__(self, value: Callable[[Any], T]) -> None:
         if not callable(value):
             raise ValueError("Is not callable")
         parameters = inspect.signature(value).parameters
@@ -61,10 +61,10 @@ class Method(Generic[T_co]):
 
 
 # Reactive Input (either realized for deferred (thunk); the input to __set__)
-RI = Union[T_co, Thunk[T_co]]
+RI = Union[T, Thunk[T]]
 
 
-class RA(Generic[T_co]):
+class RA(Generic[T]):
     """A data descriptor that manages Reactive class Attributes.
 
     Useful with normal objects, dataclasses, and anything else really.
@@ -84,11 +84,11 @@ class RA(Generic[T_co]):
     """
 
     @overload
-    def __init__(self, default: RI[T_co]) -> None:
+    def __init__(self, default: RI[T]) -> None:
         ...
 
     @overload
-    def __init__(self, default: Method[T_co], depends: Iterable[RA]) -> None:
+    def __init__(self, default: Method[T], depends: Iterable[RA]) -> None:
         ...
 
     @overload
@@ -115,7 +115,7 @@ class RA(Generic[T_co]):
                 owner._ra_relationships[relationship.name] = set()
             owner._ra_relationships[relationship.name].add(name)
 
-    def __get__(self, obj, objtype=None) -> T_co:
+    def __get__(self, obj, objtype=None) -> T:
         if obj is None:
             if self.default is _NOTHING:
                 raise AttributeError("Not set")
@@ -140,7 +140,7 @@ class RA(Generic[T_co]):
             setattr(obj, self.private_name, obj_value.value())
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: RI[T_co]) -> None:
+    def __set__(self, obj, value: RI[T]) -> None:
         methods_autoset: set[str] = getattr(
             obj, "_ra_methods_autoset", _EMPTY_SET
         )
@@ -168,12 +168,12 @@ class RA(Generic[T_co]):
 
 
 @overload
-def rattr() -> RA[T_co]:
+def rattr() -> RA:
     ...
 
 
 @overload
-def rattr(default: RI[T_co]) -> RA[T_co]:
+def rattr(default: RI[T]) -> RA[T]:
     ...
 
 
@@ -190,7 +190,7 @@ def rattr(default=_NOTHING):
 
 def rproperty(
     *dependencies: RA,
-) -> Callable[[Callable[[Any], T_co]], RA[T_co]]:
+) -> Callable[[Callable[[Any], T]], RA[T]]:
     """Initialize a reactive method, making it behave a bit like the @property
     decorator. Eg, it does not need to be called.
 
@@ -206,13 +206,13 @@ def rproperty(
         if not isinstance(dependency, RA):
             raise TypeError(f"{dependency} must be a RA (Reactive Attribute)")
 
-    def _rattr(default: Callable[[Any], T_co]) -> RA[T_co]:
+    def _rattr(default: Callable[[Any], T]) -> RA[T]:
         return RA(Method(default), dependencies)
 
     return _rattr
 
 
-def thunk(value: Callable[[], T_co]) -> Thunk[T_co]:
+def thunk(value: Callable[[], T]) -> Thunk[T]:
     """Wrap a thunk (no argument function) for rattr.
 
     See: <https://en.wikipedia.org/wiki/Thunk>
