@@ -29,6 +29,8 @@ T = TypeVar("T")
 class Thunk(Generic[T]):
     """Wrap, and validate, a callable function with no required arguments."""
 
+    __slots__ = ("value",)
+
     def __init__(self, value: Callable[[], T]) -> None:
         if not callable(value):
             raise ValueError(f"{value} is not callable")
@@ -40,6 +42,8 @@ class Thunk(Generic[T]):
 
 class Method(Generic[T]):
     """Wrap, and validate, a callable function with one required argument."""
+
+    __slots__ = ("value",)
 
     def __init__(self, value: Callable[[Any], T]) -> None:
         if not callable(value):
@@ -82,6 +86,15 @@ class RA(Generic[T]):
             manually overridden by users. Since dependents can only be methods,
             this trick somehow works!
     """
+
+    __slots__ = (
+        "default",
+        "depends",
+        "is_thunk",
+        "is_method",
+        "name",
+        "private_name",
+    )
 
     @overload
     def __init__(self, default: RI[T]) -> None:
