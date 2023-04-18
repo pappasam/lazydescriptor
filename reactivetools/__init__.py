@@ -160,6 +160,7 @@ class RA(Generic[T]):
                     obj._ra_methods_autoset = set()
                 obj._ra_methods_autoset.add(self.name)
                 return result
+            setattr(obj, self.private_name, self.default)
             return cast(T, self.default)
         if isinstance(obj_value, Thunk):
             setattr(obj, self.private_name, obj_value.value())
