@@ -6,7 +6,16 @@ See: <https://en.wikipedia.org/wiki/Reactive_programming>
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Generic, Iterable, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-instance-attributes
@@ -101,7 +110,7 @@ class RA(Generic[T]):
         ...
 
     @overload
-    def __init__(self, default: Method[T], depends: Iterable[RA]) -> None:
+    def __init__(self, default: Method[T], depends: Iterable[RA[T]]) -> None:
         ...
 
     @overload
@@ -110,7 +119,10 @@ class RA(Generic[T]):
 
     def __init__(self, default=_NOTHING, depends=_NOTHING) -> None:
         self.default = default
-        self.depends = [] if depends is _NOTHING else depends
+        self.depends = cast(
+            Iterable[RA[T]],
+            [] if depends is _NOTHING else depends,
+        )
         self.is_thunk = isinstance(default, Thunk)
         self.is_method = isinstance(default, Method)
         self.name = "default"
@@ -132,23 +144,23 @@ class RA(Generic[T]):
         if obj is None:
             if self.default is _NOTHING:
                 raise AttributeError("Not set")
-            return self.default
+            return cast(T, self.default)
         obj_value = getattr(obj, self.private_name, _NOTHING)
         if obj_value is _NOTHING:
             if self.default is _NOTHING:
                 raise AttributeError("Not set")
             if self.is_thunk:
-                result = self.default.value()
+                result = cast(Thunk[T], self.default).value()
                 setattr(obj, self.private_name, result)
                 return result
             if self.is_method:
-                result = self.default.value(obj)
+                result = cast(Method[T], self.default).value(obj)
                 setattr(obj, self.private_name, result)
                 if not hasattr(obj, "_ra_methods_autoset"):
                     obj._ra_methods_autoset = set()
                 obj._ra_methods_autoset.add(self.name)
                 return result
-            return self.default
+            return cast(T, self.default)
         if isinstance(obj_value, Thunk):
             setattr(obj, self.private_name, obj_value.value())
         return getattr(obj, self.private_name)
@@ -192,7 +204,7 @@ def rattr(default=_NOTHING):
             my_int: RA[int] = rattr()
             my_str_with_default: RA[str] = rattr("my-default")
     """
-    return RA(default)
+    return RA(cast(RI[T], default))
 
 
 def rproperty(
