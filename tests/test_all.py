@@ -13,7 +13,11 @@ def _return_world() -> str:
 
 
 class MyTestClass:
-    """Testing class for lazy values."""
+    """Testing class for lazy values.
+
+    Note: this also works for dataclasses. Just remove the "init" method and
+    add @dataclasses.dataclass.
+    """
 
     my_normal: int
     my_int: RA[int] = rattr()
@@ -63,7 +67,6 @@ TEST2 = MyTestClass(
 
 def test_all(capsys) -> None:
     """Test all methods."""
-
     # Test method
     result = TEST1.add_numbers
     captured = capsys.readouterr()
