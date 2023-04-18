@@ -120,7 +120,7 @@ class RA(Generic[T]):
     def __init__(self, default=_NOTHING, depends=_NOTHING) -> None:
         self.default = default
         self.depends = cast(
-            Iterable[RA[T]],
+            Iterable[RA],
             [] if depends is _NOTHING else depends,
         )
         self.is_thunk = isinstance(default, Thunk)
