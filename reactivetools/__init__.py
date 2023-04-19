@@ -196,11 +196,11 @@ def rattr() -> RA:
 
 
 @overload
-def rattr(default: RI[T]) -> RA[T]:
+def rattr(*, default: RI[T]) -> RA[T]:
     ...
 
 
-def rattr(default=_NOTHING):
+def rattr(*, default=_NOTHING):
     """Initialize a reactive attribute.
 
     Example:
