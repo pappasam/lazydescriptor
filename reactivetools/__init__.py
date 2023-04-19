@@ -5,6 +5,7 @@ See: <https://en.wikipedia.org/wiki/Reactive_programming>
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import (
     Any,
@@ -14,6 +15,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    dataclass_transform,
     overload,
 )
 
@@ -24,6 +26,7 @@ __all__ = [
     "RA",
     "RI",
     "rattr",
+    "rdataclass",
     "rproperty",
     "thunk",
 ]
@@ -136,7 +139,7 @@ class RA(Generic[T]):
         for relationship in self.depends:
             if relationship.name == name:
                 raise ValueError("A method cannot be related to itself")
-            if not relationship.name in owner._ra_relationships:
+            if relationship.name not in owner._ra_relationships:
                 owner._ra_relationships[relationship.name] = set()
             owner._ra_relationships[relationship.name].add(name)
 
@@ -230,6 +233,15 @@ def rproperty(
         return RA(Method(default), dependencies)
 
     return _rattr
+
+
+@dataclass_transform(
+    kw_only_default=True,
+    field_specifiers=(dataclasses.field, rattr),
+)
+def rdataclass(cls: type[T]) -> type[T]:
+    """Create a dataclass that works well with reactivetools."""
+    return dataclasses.dataclass(cls)
 
 
 def thunk(value: Callable[[], T]) -> Thunk[T]:

@@ -1,8 +1,6 @@
 """All tests."""
 
-import dataclasses
-
-from reactivetools import RA, rattr, rproperty, thunk
+from reactivetools import RA, rattr, rdataclass, rproperty, thunk
 
 # pylint: disable=comparison-with-callable
 # pylint: disable=too-few-public-methods
@@ -14,7 +12,7 @@ def _return_world() -> str:
     return "world"
 
 
-@dataclasses.dataclass
+@rdataclass
 class MyTestClass:
     """Testing class for lazy values.
 
