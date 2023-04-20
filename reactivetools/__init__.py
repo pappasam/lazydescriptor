@@ -206,7 +206,7 @@ def rattr(*, default=_NOTHING):
     Example:
         class MyReactive:
             my_int: RA[int] = rattr()
-            my_str_with_default: RA[str] = rattr("my-default")
+            my_str_with_default: RA[str] = rattr(default="my-default")
     """
     return RA(cast(RI[T], default))
 
@@ -251,6 +251,6 @@ def thunk(value: Callable[[], T]) -> Thunk[T]:
     Example:
         class MyReactive:
             my_int: RA[int] = rattr()
-            my_int_with_lazy_default: RA[int] = rattr(thunk(lambda: 12))
+            my_int_with_lazy_default: RA[int] = rattr(default=thunk(lambda: 2))
     """
     return Thunk(value)
