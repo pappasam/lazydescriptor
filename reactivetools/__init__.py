@@ -181,16 +181,15 @@ class RA(Generic[T]):
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_SET):
             if dependent in methods_autoset:
                 delattr(obj, dependent)
-        if hasattr(obj, "_ra_parents"):
+        if hasattr(obj, "_ra_parents"):  # value is depended on by RA field(s)
             parents = obj._ra_parents
             del obj._ra_parents
             for parent, attr_name in parents:
                 setattr(parent, attr_name, getattr(parent, attr_name))
-        if not hasattr(value, "_ra_relationships"):
-            return
-        if not hasattr(value, "_ra_parents"):
-            cast(Any, value)._ra_parents = []
-        cast(Any, value)._ra_parents.append((obj, self.name))
+        if hasattr(value, "_ra_relationships"):  # value is an RA
+            if not hasattr(value, "_ra_parents"):
+                cast(Any, value)._ra_parents = []
+            cast(Any, value)._ra_parents.append((obj, self.name))
 
     def __delete__(self, obj) -> None:
         delattr(obj, self.private_name)
