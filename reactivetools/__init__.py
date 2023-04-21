@@ -88,7 +88,7 @@ class RA(Generic[T]):
     Private names are prepended with a '_$ ', an homage to svelte and an extra
     step that makes the attribute inaccessible without getattr().
 
-    This descriptor performs two semi-weird mutations:
+    This descriptor performs some semi-weird mutations:
         1. Creates a class variable called '_ra_relationships'. This is a
             dictionary documenting the fields that depend on each field
         2. Creates an instance variable called '_ra_methods_autoset'. This is a
@@ -97,6 +97,9 @@ class RA(Generic[T]):
             prevent unexpected re-computation for fields that have been
             manually overridden by users. Since dependents can only be methods,
             this trick somehow works!
+        3. Creates an instance variable called '_ra_parents'. If a field refers
+            to another reactive container, we must manually reset all reactive
+            references whenever nested attributes change.
     """
 
     __slots__ = (
@@ -178,6 +181,16 @@ class RA(Generic[T]):
         for dependent in obj._ra_relationships.get(self.name, _EMPTY_SET):
             if dependent in methods_autoset:
                 delattr(obj, dependent)
+        if hasattr(obj, "_ra_parents"):
+            parents = obj._ra_parents
+            del obj._ra_parents
+            for parent, attr_name in parents:
+                setattr(parent, attr_name, getattr(parent, attr_name))
+        if not hasattr(value, "_ra_relationships"):
+            return
+        if not hasattr(value, "_ra_parents"):
+            cast(Any, value)._ra_parents = []
+        cast(Any, value)._ra_parents.append((obj, self.name))
 
     def __delete__(self, obj) -> None:
         delattr(obj, self.private_name)
