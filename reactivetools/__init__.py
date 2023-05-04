@@ -101,6 +101,7 @@ class RA(Generic[T]):
 
     __slots__ = (
         "default",
+        "init",
         "depends",
         "is_thunk",
         "is_method",
@@ -109,19 +110,28 @@ class RA(Generic[T]):
     )
 
     @overload
-    def __init__(self, default: RI[T]) -> None:
+    def __init__(self, *, default: RI[T], init: bool) -> None:
         ...
 
     @overload
-    def __init__(self, default: Method[T], depends: Iterable[RA[T]]) -> None:
+    def __init__(
+        self,
+        *,
+        default: Method[T],
+        depends: Iterable[RA[T]],
+        init: bool,
+    ) -> None:
         ...
 
-    @overload
-    def __init__(self) -> None:
-        ...
-
-    def __init__(self, default=_NOTHING, depends=_NOTHING) -> None:
+    def __init__(
+        self,
+        *,
+        default=_NOTHING,
+        depends=_NOTHING,
+        init=True,
+    ) -> None:
         self.default = default
+        self.init = init
         self.depends = cast(
             Iterable[RA],
             [] if depends is _NOTHING else depends,
@@ -191,16 +201,16 @@ class RA(Generic[T]):
 
 
 @overload
-def rattr() -> RA:
+def rattr(*, init: bool) -> RA:
     ...
 
 
 @overload
-def rattr(*, default: RI[T]) -> RA[T]:
+def rattr(*, default: RI[T], init: bool) -> RA[T]:
     ...
 
 
-def rattr(*, default=_NOTHING):
+def rattr(*, default=_NOTHING, init=True):
     """Initialize a reactive attribute.
 
     Example:
@@ -208,7 +218,7 @@ def rattr(*, default=_NOTHING):
             my_int: RA[int] = rattr()
             my_str_with_default: RA[str] = rattr(default="my-default")
     """
-    return RA(cast(RI[T], default))
+    return RA(default=cast(RI[T], default), init=init)
 
 
 def rproperty(
@@ -230,7 +240,7 @@ def rproperty(
             raise TypeError(f"{dependency} must be a RA (Reactive Attribute)")
 
     def _rattr(default: Callable[[Any], T]) -> RA[T]:
-        return RA(Method(default), dependencies)
+        return RA(default=Method(default), depends=dependencies, init=False)
 
     return _rattr
 
