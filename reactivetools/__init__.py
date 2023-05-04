@@ -201,12 +201,12 @@ class RA(Generic[T]):
 
 
 @overload
-def rattr(*, init: bool) -> RA:
+def rattr(*, init: bool = True) -> RA:
     ...
 
 
 @overload
-def rattr(*, default: RI[T], init: bool) -> RA[T]:
+def rattr(*, default: RI[T], init: bool = True) -> RA[T]:
     ...
 
 
