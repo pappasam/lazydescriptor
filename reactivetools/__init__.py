@@ -110,16 +110,12 @@ class RA(Generic[T]):
     )
 
     @overload
-    def __init__(self, *, default: RI[T], init: bool) -> None:
+    def __init__(self, *, default: RI[T]) -> None:
         ...
 
     @overload
     def __init__(
-        self,
-        *,
-        default: Method[T],
-        depends: Iterable[RA[T]],
-        init: bool,
+        self, *, default: Method[T], depends: Iterable[RA[T]]
     ) -> None:
         ...
 
@@ -128,10 +124,8 @@ class RA(Generic[T]):
         *,
         default=_NOTHING,
         depends=_NOTHING,
-        init=True,
     ) -> None:
         self.default = default
-        self.init = init
         self.depends = cast(
             Iterable[RA],
             [] if depends is _NOTHING else depends,
@@ -201,16 +195,16 @@ class RA(Generic[T]):
 
 
 @overload
-def rattr(*, init: bool = True) -> RA:
+def rattr() -> RA:
     ...
 
 
 @overload
-def rattr(*, default: RI[T], init: bool = True) -> RA[T]:
+def rattr(*, default: RI[T]) -> RA[T]:
     ...
 
 
-def rattr(*, default=_NOTHING, init=True):
+def rattr(*, default=_NOTHING):
     """Initialize a reactive attribute.
 
     Example:
@@ -218,7 +212,7 @@ def rattr(*, default=_NOTHING, init=True):
             my_int: RA[int] = rattr()
             my_str_with_default: RA[str] = rattr(default="my-default")
     """
-    return RA(default=cast(RI[T], default), init=init)
+    return RA(default=cast(RI[T], default))
 
 
 def rproperty(
@@ -240,7 +234,7 @@ def rproperty(
             raise TypeError(f"{dependency} must be a RA (Reactive Attribute)")
 
     def _rattr(default: Callable[[Any], T]) -> RA[T]:
-        return RA(default=Method(default), depends=dependencies, init=False)
+        return RA(default=Method(default), depends=dependencies)
 
     return _rattr
 
